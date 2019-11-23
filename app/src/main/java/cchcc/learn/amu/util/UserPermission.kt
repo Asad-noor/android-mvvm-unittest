@@ -13,10 +13,6 @@ class UserPermission(private val activity: Activity, vararg permissions: String)
     lateinit var isGrantedCallback: () -> Unit
     lateinit var notGrantedCallback: () -> Unit
 
-    fun isGranted(): Boolean = perms.all { ContextCompat.checkSelfPermission(activity, it) == PackageManager.PERMISSION_GRANTED }
-
-    fun checkOrRequest(isGranted: () -> Unit) = checkOrRequest(isGranted) {}
-
     /**
      *  1. check if permission is granted
      *  2. if permission is granted, callback `isGranted`, or request permission
@@ -30,11 +26,15 @@ class UserPermission(private val activity: Activity, vararg permissions: String)
         if (permissionIsAllGranted) {
             isGranted()
         } else {
-            isGrantedCallback = isGranted
-            notGrantedCallback = notGranted
-            val requestCode = Math.abs((activity.hashCode() + isGranted.hashCode()).toShort().toInt())
-            activity.permissions.put(requestCode, this)
-            ActivityCompat.requestPermissions(activity, notGrantedPermissions, requestCode)
+            if(shouldShowRequestRational()) {
+                activity.showAlert()
+            } else {
+                isGrantedCallback = isGranted
+                notGrantedCallback = notGranted
+                val requestCode = Math.abs((activity.hashCode() + isGranted.hashCode()).toShort().toInt())
+                activity.permissions.put(requestCode, this)
+                ActivityCompat.requestPermissions(activity, notGrantedPermissions, requestCode)
+            }
         }
     }
 
